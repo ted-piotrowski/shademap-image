@@ -1,0 +1,16 @@
+{
+  "name": "shademap-image",
+  "version": "0.0.1",
+  "description": "Static image generation for ShadeMap",
+  "main": "index.js",
+  "repository": "git@github.com:ted-piotrowski/shademap-image.git",
+  "author": "Ted Piotrowski <tppiotrowski@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^13.0.1",
+    "ts-node": "^10.4.0"
+  },
+  "scripts": {
+      "start": "ts-node index.ts"
+  }
+}
