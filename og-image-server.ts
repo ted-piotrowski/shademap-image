@@ -4,7 +4,7 @@ import * as http from 'http';
 import { IncomingMessage, ServerResponse } from 'http';
 import * as path from 'path';
 import * as process from 'process';
-import puppeteer, { Page } from 'puppeteer';
+import puppeteer from 'puppeteer';
 import logger from './logging';
 
 dotenv.config();
@@ -23,7 +23,7 @@ if (!process.env.PORT) {
 	process.exit(1);
 }
 
-let page: Page;
+let page: puppeteer.Page;
 
 (async () => {
 	startServer();
