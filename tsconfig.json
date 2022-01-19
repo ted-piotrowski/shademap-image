@@ -1,0 +1,9 @@
+{
+	"compilerOptions": {
+		"lib": [
+			"DOM"
+		],
+		"outDir": "dist",
+		"esModuleInterop": true,
+	}
+}
