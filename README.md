@@ -3,7 +3,13 @@ Static image generation for ShadeMap
 
 # Setup
 
-Create .env file to configure ShadeMap URL and server PORT
+Create .env file to configure ShadeMap URL, server PORT, and DELIMITED
+
+```
+URL=/og-image
+DELIMITER=@
+PORT=8080
+```
 
 # Run
 
