@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+	<link href='https://api.mapbox.com/mapbox-gl-js/v2.6.0/mapbox-gl.css' rel='stylesheet' />
+	<script src='https://api.mapbox.com/mapbox-gl-js/v2.6.0/mapbox-gl.js'></script>
+	<script src="https://shademap.app/lib/mapboxgl-shademap.umd.min.js"></script>
+	<style>
+		body {
+			padding: 0px;
+			margin: 0px;
+		}
+
+		#mapid {
+			height: 100vh;
+		}
+	</style>
+	<title>Shade Map Mapbox example</title>
+</head>
+
+<body>
+	<div id="mapid">
+	</div>
+	<script>
+		/* Mapbox setup */
+		mapboxgl.accessToken = 'pk.eyJ1Ijoic2FjYWxlcnRzIiwiYSI6ImNreW0xaHd2ZTIwaDAyb3A5Z202MDlmN2oifQ.--ihZmOGZy0F5HVCj5Wfrg';
+		const map = new mapboxgl.Map({
+			container: 'mapid',
+			style: 'mapbox://styles/mapbox/streets-v11',
+			center: [-121.92078, 47.69682],
+			zoom: 10,
+		});
+		/* End Mapbox setup */
+
+		const DEM_SOURCE = 'mapboxwebp';
+		const maxZoom = DEM_SOURCE === 'shademap' ? 15 : (DEM_SOURCE === 'mapboxwebp' ? 15 : 15);
+		const sourceUrl = (params) => {
+			const { x, y, z } = params;
+			const subdomain = ['a', 'b', 'c', 'd'][(x + y) % 4];
+			if (DEM_SOURCE === 'shademap') {
+				return `https://shademap.app/tile/terrain/v1/${z}/${x}/${y}.png?api_key=${apiKey}`;
+			} else if (DEM_SOURCE === 'mapboxwebp') {
+				return `https://${subdomain}.tiles.mapbox.com/raster/v1/mapbox.mapbox-terrain-dem-v1/${z}/${x}/${y}.webp?sku=101wuwGrczDtH&access_token=${apiKey}`;
+			} else {
+				return `https://${subdomain}.tiles.mapbox.com/v4/mapbox.terrain-rgb/${z}/${x}/${y}.pngraw?sku=101wuwGrczDtH&access_token=${apiKey}`;
+			}
+		};
+		const getElevation = (params) => {
+			const { r, g, b } = params;
+			if (DEM_SOURCE === 'shademap') {
+				return (r * 256 + g + b / 256) - 32768;
+			} else {
+				return -10000 + ((r * 256 * 256 + g * 256 + b) * .1);
+			}
+		}
+		const apiKey = DEM_SOURCE === 'shademap' ? process.env.REACT_APP_SHADEMAP_KEY : mapboxgl.accessToken;
+
+		const tileSize = DEM_SOURCE === 'mapboxwebp' ? 512 : 256;
+
+		/* ShadeMap setup */
+		let now = new Date(1633358583454);
+		let shadeMap;
+		map.on('load', () => {
+			// add terrain layer
+
+			// use mapbox tiles
+			shadeMap = new ShadeMap({
+				date: now,
+				opacity: 0.7,
+				maxZoom,
+				apiKey,
+				tileSize,
+				sourceUrl,
+				getElevation,
+				buildings: true,
+			}).addTo(map);
+		});
+		/* End ShadeMap setup */
+
+		function setLocation(lat, lng, zoom, date, bearing, pitch) {
+			map.setCenter({ lng, lat });
+			map.setZoom(zoom);
+			shadeMap.setDate(new Date(date));
+			map.setBearing(bearing);
+			map.setPitch(pitch);
+		}
+	</script>
+</body>
+
+</html>

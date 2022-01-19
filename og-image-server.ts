@@ -1,22 +1,21 @@
 import dotenv from 'dotenv';
+import * as fs from 'fs';
 import * as http from 'http';
 import { IncomingMessage, ServerResponse } from 'http';
-import * as https from 'https';
+import * as path from 'path';
 import * as process from 'process';
-import puppeteer from 'puppeteer';
+import puppeteer, { Page } from 'puppeteer';
 import logger from './logging';
 
 dotenv.config();
 logger();
 
-// TODO: parse req.url and move map to location
-// TODO: check directory of pregenerated images first
-// TODO: some kind of process restart mechanism if things break
-
-const DELIMITER = '#';
-
 if (!process.env.URL) {
 	console.log('No ShadeMap URL defined in .env file')
+	process.exit(1);
+}
+if (!process.env.DELIMITER) {
+	console.log('No URL delimiter defined in .env file')
 	process.exit(1);
 }
 if (!process.env.PORT) {
@@ -24,43 +23,123 @@ if (!process.env.PORT) {
 	process.exit(1);
 }
 
+let page: Page;
+
 (async () => {
-	const requestListener = async function (req: IncomingMessage, res: ServerResponse) {
-		console.log(`Incoming request: ${req.url}`);
-		try {
-			if (req.url) {
-				const [prefix, location] = req.url.split(DELIMITER);
-				let [lat, lng, zoom, date, bearing, pitch] = location.split(',');
+	startServer();
+	page = await startPuppeteer();
+})();
 
-			}
-		} catch {
-		}
-
-		var callback = function (response: any) {
-			if (response.statusCode === 200) {
-				res.writeHead(200, {
-					'Content-Type': response.headers['content-type']
-				});
-				response.pipe(res);
-			} else {
-				res.writeHead(response.statusCode);
-				res.end();
-			}
-		};
-
-		https.request('https://shademap.app/og-image.png', callback).end();
-	}
-
+async function startPuppeteer() {
 	console.log('Launching puppeteer');
 	const browser = await puppeteer.launch();
 	console.log('Opening new page');
 	const page = await browser.newPage();
+	await page.setViewport({
+		width: 1200,
+		height: 630,
+	})
 	console.log(`Loading ShadeMap: ${process.env.URL}`);
-	await page.goto(process.env.URL || '', {
+	await page.goto(`http://localhost:${process.env.PORT}${process.env.URL}`, {
 		waitUntil: 'networkidle2'
 	});
+	return page;
+}
+
+async function startServer() {
 	console.log('Starting server');
 	const server = http.createServer(requestListener);
 	server.listen(process.env.PORT);
 	console.log(`Listening on ${process.env.PORT}`);
-})();
+}
+
+let inProgress = false;
+
+function parseUrl(url: string) {
+	const [prefix, location] = url.split(process.env.DELIMITER || '');
+	const [latS, lngS, zoomS, dateS, bearingS = "0b", pitchS = "0p"] = location.split(',');
+	const lat = parseFloat(latS);
+	const lng = parseFloat(lngS);
+	const zoom = parseFloat(zoomS.slice(0, -1));
+	const date = parseInt(dateS.slice(0, -1), 10);
+	const bearing = parseFloat(bearingS);
+	const pitch = parseFloat(pitchS);
+	const filename = `${location}.png`;
+	console.log(`parsedUrl: ${JSON.stringify({ lat, lng, zoom, date, bearing, pitch, filename })}`)
+	if (Number.isNaN(lat) || Number.isNaN(lng) || Number.isNaN(zoom) || Number.isNaN(date)) {
+		throw new Error(`Invalid url format ${url}`)
+	}
+	return { lat, lng, zoom, date, bearing, pitch, filename };
+}
+
+function sendFile(res: ServerResponse, fileName: string, contentType: string) {
+	fs.readFile(path.join('public', fileName), (err, data) => {
+		if (err) {
+			res.writeHead(500);
+			res.end();
+		}
+		res.writeHead(200, {
+			'Content-Type': contentType,
+		})
+		res.end(data);
+	})
+}
+
+async function checkForFile(filename: string): Promise<boolean> {
+	console.log(`Checking if ${filename} already exists`);
+	return new Promise((res, rej) => {
+		fs.stat(path.join(filename), (err) => {
+			if (err === null) {
+				res(true);
+			} else {
+				res(false);
+			}
+		})
+	});
+}
+
+let window = 'shim';
+
+async function requestListener(req: IncomingMessage, res: ServerResponse) {
+	if (req.url === process.env.URL) {
+		sendFile(res, 'index.html', 'text/html');
+		return;
+	}
+	if (req.url === '/favicon.ico') {
+		res.end();
+		return;
+	}
+
+	console.log(`Incoming request: ${req.url}, inProgress: ${inProgress}`);
+	try {
+		if (!inProgress && page && req.url) {
+			inProgress = true;
+			const { lat, lng, zoom, date, bearing, pitch, filename } = parseUrl(req.url);
+
+			const fileExists = await checkForFile(path.join('public', 'images', filename));
+
+			if (fileExists) {
+				console.log(`${filename} already exists, service from public/`);
+				sendFile(res, path.join('images', filename), 'image/png');
+				return;
+			}
+
+			console.log(`${filename} does not exist, moving Shademap to new coordinates`)
+			await page.evaluate(({ lat, lng, zoom, date, bearing, pitch }) => {
+				(window as any).setLocation(lat, lng, zoom, date, bearing, pitch);
+			}, { lat, lng, zoom, date, bearing, pitch })
+
+			console.log(`Waiting for network idle`);
+			page.waitForNetworkIdle({});
+			console.log(`Capturing screenshot`);
+			await page.screenshot({ path: path.join('public', 'images', filename) });
+			sendFile(res, path.join('images', filename), 'image/png');
+			return;
+		}
+	} catch (e) {
+		console.log(e)
+	} finally {
+		inProgress = false;
+	}
+	sendFile(res, path.join('images', 'og-image.png'), 'image/png');
+}
