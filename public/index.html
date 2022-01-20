@@ -27,11 +27,11 @@
 	<script>
 		/* Mapbox setup */
 		mapboxgl.accessToken = 'pk.eyJ1Ijoic2FjYWxlcnRzIiwiYSI6ImNreW0xaHd2ZTIwaDAyb3A5Z202MDlmN2oifQ.--ihZmOGZy0F5HVCj5Wfrg';
-		const map = new mapboxgl.Map({
+		var map = new mapboxgl.Map({
 			container: 'mapid',
-			style: 'mapbox://styles/mapbox/streets-v11',
-			center: [-121.92078, 47.69682],
-			zoom: 10,
+			style: 'mapbox://styles/sacalerts/ckyn7cbeb34hd14mp8r785cjz',
+			center: [0, 0],
+			zoom: 1,
 		});
 		/* End Mapbox setup */
 
@@ -62,14 +62,21 @@
 
 		/* ShadeMap setup */
 		let now = new Date(1633358583454);
-		let shadeMap;
+		var shadeMap;
 		map.on('load', () => {
 			// add terrain layer
+			map.addSource('mapbox-dem', {
+				'type': 'raster-dem',
+				'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+				'tileSize': 512,
+				'maxzoom': 14
+			});
 
 			// use mapbox tiles
 			shadeMap = new ShadeMap({
 				date: now,
-				opacity: 0.7,
+				color: '#01112f',
+				opacity: 0.65,
 				maxZoom,
 				apiKey,
 				tileSize,
@@ -81,11 +88,19 @@
 		/* End ShadeMap setup */
 
 		function setLocation(lat, lng, zoom, date, bearing, pitch) {
+			if (pitch) {
+				map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+			} else {
+				map.setTerrain();
+			}
 			map.setCenter({ lng, lat });
 			map.setZoom(zoom);
-			shadeMap.setDate(new Date(date));
 			map.setBearing(bearing);
 			map.setPitch(pitch);
+			shadeMap.setDate(new Date(date));
+			const improveThisMap = document.querySelector('.mapbox-improve-map');
+			improveThisMap && improveThisMap.remove();
+			shadeMap.flushSync();
 		}
 	</script>
 </body>
