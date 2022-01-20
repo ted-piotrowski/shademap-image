@@ -99,10 +99,16 @@ async function checkForFile(filename: string): Promise<boolean> {
 	});
 }
 
+function elapsed(start: number) {
+	console.log(`Request took ${(Date.now() - start) / 1000} seconds`)
+}
+
 let window = 'shim';
-let map = { on: (a: any, b: any) => 'shim' };
+let map = { on: (a: any, b: any) => console.log('shim') };
+let shadeMap = { flushSync: () => console.log('shim') };
 
 async function requestListener(req: IncomingMessage, res: ServerResponse) {
+	const start = Date.now();
 	if (req.url === process.env.URL) {
 		sendFile(res, 'index.html', 'text/html');
 		return;
@@ -121,8 +127,9 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 			const fileExists = await checkForFile(path.join('public', 'images', filename));
 
 			if (fileExists) {
-				console.log(`${filename} already exists, service from public/`);
+				console.log(`${filename} already exists, serve from public/`);
 				sendFile(res, path.join('images', filename), 'image/png');
+				elapsed(start);
 				return;
 			}
 
@@ -136,9 +143,17 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 
 			console.log(`Waiting for network idle`);
 			page.waitForNetworkIdle();
+
+			console.log(`Flushing ShadeMap GPU`);
+			await page.evaluate(() => {
+				shadeMap.flushSync();
+			})
+
 			console.log(`Capturing screenshot`);
 			await page.screenshot({ path: path.join('public', 'images', filename) });
+			console.log(`Sending screenshot`);
 			sendFile(res, path.join('images', filename), 'image/png');
+			elapsed(start);
 			return;
 		}
 	} catch (e) {
@@ -147,4 +162,5 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 		inProgress = false;
 	}
 	sendFile(res, path.join('og-image.png'), 'image/png');
+	elapsed(start);
 }
