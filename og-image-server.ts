@@ -43,6 +43,7 @@ async function startPuppeteer() {
 	await page.goto(`http://localhost:${process.env.PORT}${process.env.URL}`, {
 		waitUntil: 'networkidle2'
 	});
+	console.log(`Loaded ShadeMap`);
 	return page;
 }
 
@@ -99,6 +100,7 @@ async function checkForFile(filename: string): Promise<boolean> {
 }
 
 let window = 'shim';
+let map = { on: (a: any, b: any) => 'shim' };
 
 async function requestListener(req: IncomingMessage, res: ServerResponse) {
 	if (req.url === process.env.URL) {
@@ -125,12 +127,15 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 			}
 
 			console.log(`${filename} does not exist, moving Shademap to new coordinates`)
-			await page.evaluate(({ lat, lng, zoom, date, bearing, pitch }) => {
+			await page.evaluate(async ({ lat, lng, zoom, date, bearing, pitch }) => {
 				(window as any).setLocation(lat, lng, zoom, date, bearing, pitch);
+				await new Promise((res, rej) => {
+					map.on('idle', res);
+				});
 			}, { lat, lng, zoom, date, bearing, pitch })
 
 			console.log(`Waiting for network idle`);
-			page.waitForNetworkIdle({});
+			page.waitForNetworkIdle();
 			console.log(`Capturing screenshot`);
 			await page.screenshot({ path: path.join('public', 'images', filename) });
 			sendFile(res, path.join('images', filename), 'image/png');
@@ -141,5 +146,5 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 	} finally {
 		inProgress = false;
 	}
-	sendFile(res, path.join('images', 'og-image.png'), 'image/png');
+	sendFile(res, path.join('og-image.png'), 'image/png');
 }

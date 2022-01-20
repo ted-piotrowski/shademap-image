@@ -1,6 +1,5 @@
 .DS_Store
 public/images/*
-!public/images/og-image.png
 
 # Logs
 logs
