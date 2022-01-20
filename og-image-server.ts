@@ -39,6 +39,7 @@ async function startPuppeteer() {
 		width: 1200,
 		height: 630,
 	})
+	page.on('console', (msg) => console.log('PAGE LOG:', msg.text()));
 	console.log(`Loading ShadeMap: ${process.env.URL}`);
 	await page.goto(`http://localhost:${process.env.PORT}${process.env.URL}`, {
 		waitUntil: 'networkidle2'
@@ -142,7 +143,7 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 			}, { lat, lng, zoom, date, bearing, pitch })
 
 			console.log(`Waiting for network idle`);
-			page.waitForNetworkIdle();
+			await page.waitForNetworkIdle();
 
 			console.log(`Flushing ShadeMap GPU`);
 			await page.evaluate(() => {
@@ -150,9 +151,16 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 			})
 
 			console.log(`Capturing screenshot`);
-			await page.screenshot({ path: path.join('public', 'images', filename) });
+			const screenshot = await page.screenshot() as Buffer;
 			console.log(`Sending screenshot`);
-			sendFile(res, path.join('images', filename), 'image/png');
+			res.writeHead(200, {
+				'Content-Type': 'image/png',
+			})
+			res.end(screenshot);
+			console.log(`Saving ${filename}`);
+			fs.writeFile(path.join('public', 'images', filename), screenshot, () => {
+				console.log(`Saved ${filename}`);
+			});
 			elapsed(start);
 			return;
 		}
