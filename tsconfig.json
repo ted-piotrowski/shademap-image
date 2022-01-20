@@ -4,8 +4,8 @@
 			"DOM"
 		],
 		"outDir": "dist",
+		"module": "CommonJS",
 		"esModuleInterop": true,
-		"moduleResolution": "node",
 		"target": "es2018"
 	}
 }
