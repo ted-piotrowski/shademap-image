@@ -14,12 +14,14 @@ PORT=8080
 # Run
 
 ```
+./redeploy.sh
+```
+
+# Helpful commands
+
+```
 yarn build
 nohup node dist/og-image-server.js &
-```
-
-# Kill
-
-```
 kill $(ps -aux | grep "node dist/og-image-server.js" | awk '{print $2; exit}')
 ```
+
