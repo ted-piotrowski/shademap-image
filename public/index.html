@@ -93,10 +93,12 @@
 			} else {
 				map.setTerrain();
 			}
-			map.setCenter({ lng, lat });
-			map.setZoom(zoom);
-			map.setBearing(bearing);
-			map.setPitch(pitch);
+			map.jumpTo({
+				center: { lng, lat },
+				zoom,
+				bearing,
+				pitch
+			})
 			shadeMap.setDate(new Date(date));
 			const improveThisMap = document.querySelector('.mapbox-improve-map');
 			improveThisMap && improveThisMap.remove();
