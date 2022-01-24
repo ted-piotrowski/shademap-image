@@ -105,7 +105,7 @@ function elapsed(start: number) {
 }
 
 let window = 'shim';
-let map = { on: (a: any, b: any) => console.log('shim') };
+let map = { once: (a: any, b: any) => console.log('shim') };
 let shadeMap = { flushSync: () => console.log('shim') };
 
 async function requestListener(req: IncomingMessage, res: ServerResponse) {
@@ -138,7 +138,7 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 			await page.evaluate(async ({ lat, lng, zoom, date, bearing, pitch }) => {
 				(window as any).setLocation(lat, lng, zoom, date, bearing, pitch);
 				await new Promise((res, rej) => {
-					map.on('idle', res);
+					map.once('idle', res);
 				});
 			}, { lat, lng, zoom, date, bearing, pitch })
 
