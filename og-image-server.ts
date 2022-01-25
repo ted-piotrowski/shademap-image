@@ -118,6 +118,21 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 		res.end();
 		return;
 	}
+	if (req.url === '/list') {
+		fs.readdir(path.join('public', 'images'), (err, files) => {
+			if (err) {
+				res.end();
+			}
+			const html = files.map(file => {
+				return `<a href="/@${file.replace('.png', '')}">${file} - ${new Date(fs.statSync(path.join('public', 'images', file)).mtime.getTime())}</a><br>`;
+			}).join('');
+			res.writeHead(200, {
+				'Content-Type': 'text/html',
+			})
+			res.end(`<html><body>${html}</body></html>`);
+		});
+		return;
+	}
 
 	console.log(`Incoming request: ${req.url}, inProgress: ${inProgress}`);
 	try {
