@@ -118,7 +118,7 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 		res.end();
 		return;
 	}
-	if (req.url === '/list') {
+	if (req.url === (process.env.URL + '/list')) {
 		fs.readdir(path.join('public', 'images'), (err, files) => {
 			if (err) {
 				res.end();
