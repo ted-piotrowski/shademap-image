@@ -7,10 +7,9 @@ export default () => {
 
 	console.log = function () {
 		const now = new Date();
-		const date = now.toLocaleDateString();
-		const time = now.toLocaleTimeString();
-		logFile.write(`${date} ${time} ${util.format.apply(null, arguments)} \n`);
-		logStdout.write(`${date} ${time} ${util.format.apply(null, arguments)} \n`);
+		const date = now.toISOString().replace('T', ' ').replace('Z', ' ');
+		logFile.write(`${date} ${util.format.apply(null, arguments)} \n`);
+		logStdout.write(`${date} ${util.format.apply(null, arguments)} \n`);
 	}
 	console.error = console.log;
 }

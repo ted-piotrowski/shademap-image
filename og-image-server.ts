@@ -100,6 +100,31 @@ async function checkForFile(filename: string): Promise<boolean> {
 	});
 }
 
+function listFiles(res: ServerResponse) {
+	fs.readdir(path.join('public', 'images'), (err, files) => {
+		if (err) {
+			res.end();
+		}
+		const fileObjs = files.map(file => {
+			return {
+				created: fs.statSync(path.join('public', 'images', file)).mtime.getTime(),
+				name: file,
+			}
+		});
+		fileObjs.sort((a, b) => {
+			return b.created - a.created;
+		});
+		const html = fileObjs.slice(0, 20).map((fileObj) => {
+			return `<a href="${process.env.URL}/@${fileObj.name.replace('.png', '')}">${fileObj.name} - ${new Date(fileObj.created)}</a><br>`;
+		}).join('');
+
+		res.writeHead(200, {
+			'Content-Type': 'text/html',
+		})
+		res.end(`<html><body>${html}</body></html>`);
+	});
+}
+
 function elapsed(start: number) {
 	console.log(`Request took ${(Date.now() - start) / 1000} seconds`)
 }
@@ -119,18 +144,7 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 		return;
 	}
 	if (req.url === (process.env.URL + '/list')) {
-		fs.readdir(path.join('public', 'images'), (err, files) => {
-			if (err) {
-				res.end();
-			}
-			const html = files.map(file => {
-				return `<a href="${process.env.URL}/@${file.replace('.png', '')}">${file} - ${new Date(fs.statSync(path.join('public', 'images', file)).mtime.getTime())}</a><br>`;
-			}).join('');
-			res.writeHead(200, {
-				'Content-Type': 'text/html',
-			})
-			res.end(`<html><body>${html}</body></html>`);
-		});
+		listFiles(res);
 		return;
 	}
 
