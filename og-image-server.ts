@@ -115,7 +115,7 @@ function listFiles(res: ServerResponse) {
 			return b.created - a.created;
 		});
 		const html = fileObjs.slice(0, 20).map((fileObj) => {
-			return `<a href="${process.env.URL}/@${fileObj.name.replace('.png', '')}">${fileObj.name} - ${new Date(fileObj.created)}</a><br>`;
+			return `<a href="${process.env.URL}/@${fileObj.name.replace('.png', '')}">${fileObj.name} - ${new Date(fileObj.created).toISOString()}</a><br>`;
 		}).join('');
 
 		res.writeHead(200, {

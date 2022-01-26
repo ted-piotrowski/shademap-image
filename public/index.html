@@ -83,6 +83,7 @@
 				sourceUrl,
 				getElevation,
 				buildings: true,
+				debug: (msg) => { console.log(new Date().toISOString().replace('T', ' ').replace('Z', ' '), msg) }
 			}).addTo(map);
 		});
 		/* End ShadeMap setup */
