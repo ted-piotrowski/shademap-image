@@ -115,7 +115,11 @@ function listFiles(res: ServerResponse) {
 			return b.created - a.created;
 		});
 		const html = fileObjs.slice(0, 20).map((fileObj) => {
-			return `<a href="${process.env.URL}/@${fileObj.name.replace('.png', '')}">${fileObj.name} - ${new Date(fileObj.created).toISOString()}</a><br>`;
+			const coords = fileObj.name.replace('.png', '');
+			return `<a href="${process.env.URL}/@${coords}">${fileObj.name}.png</a> 
+			- ${new Date(fileObj.created).toISOString().replace('T', '').replace('Z', '')}
+			- <a href="https://shademap.app/@${coords}}">Map</a>
+			<br>`;
 		}).join('');
 
 		res.writeHead(200, {
