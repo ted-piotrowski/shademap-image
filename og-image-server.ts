@@ -181,6 +181,12 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 
 			console.log(`Capturing screenshot`);
 			const screenshot = await page.screenshot() as Buffer;
+
+			console.log(`Setting pitch back to 0`);
+			page.evaluate(async ({ lat, lng, zoom, date, bearing, pitch }) => {
+				(window as any).setLocation(lat, lng, zoom, date, bearing, pitch);
+			}, { lat, lng, zoom, date, bearing, pitch: 0 });
+
 			console.log(`Sending screenshot`);
 			res.writeHead(200, {
 				'Content-Type': 'image/png',
