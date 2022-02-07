@@ -116,8 +116,8 @@ function listFiles(res: ServerResponse) {
 		});
 		const html = fileObjs.slice(0, 20).map((fileObj) => {
 			const coords = fileObj.name.replace('.png', '');
-			return `<a href="${process.env.URL}/@${coords}">${fileObj.name}.png</a> 
-			- ${new Date(fileObj.created).toISOString().replace('T', '').replace('Z', '')}
+			return `${new Date(fileObj.created).toISOString().replace('T', ' ').replace('Z', '')}
+			- <a href="${process.env.URL}/@${coords}">${fileObj.name}.png</a> 
 			- <a href="https://shademap.app/@${coords}}">Map</a>
 			<br>`;
 		}).join('');
