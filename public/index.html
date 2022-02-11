@@ -85,14 +85,34 @@
 				buildings: true,
 				debug: (msg) => { console.log(new Date().toISOString().replace('T', ' ').replace('Z', ' '), msg) }
 			}).addTo(map);
+
+			map.addLayer(
+				{
+					'id': 'building-layer',
+					'source': map.getTerrain !== undefined ? 'composite' : 'maptiler_planet',
+					'source-layer': 'building',
+					'filter': map.getTerrain !== undefined ? ['==', 'extrude', 'true'] : ['has', 'render_height'],
+					'type': 'fill-extrusion',
+					'minzoom': 15,
+					'paint': {
+						'fill-extrusion-color': '#aaa',
+						'fill-extrusion-height': ['get', map.getTerrain !== undefined ? 'height' : 'render_height'],
+						'fill-extrusion-base': ['get', 'min_height'],
+						'fill-extrusion-opacity': 1
+					}
+				}
+			);
+			map.setLayoutProperty('building-layer', 'visibility', 'none');
 		});
 		/* End ShadeMap setup */
 
 		function setLocation(lat, lng, zoom, date, bearing, pitch) {
 			if (pitch) {
 				map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+				map.setLayoutProperty('building-layer', 'visibility', 'visible');
 			} else {
 				map.setTerrain();
+				map.setLayoutProperty('building-layer', 'visibility', 'none');
 			}
 			map.jumpTo({
 				center: { lng, lat },
