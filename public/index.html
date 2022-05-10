@@ -123,12 +123,14 @@
 				bearing,
 				pitch
 			})
+			console.log('await map.jumpTo idle');
 			await idle;
 			shadeMap.setDate(new Date(date));
 			idle = new Promise((res, rej) => {
 				shadeMap.on('idle', res);
 			});
 			shadeMap.setDate(new Date(date));
+			console.log('await shadeMap.setDate idle');
 			await idle;
 			const improveThisMap = document.querySelector('.mapbox-improve-map');
 			improveThisMap && improveThisMap.remove();

@@ -178,6 +178,7 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 		} finally {
 			inProgress = false;
 		}
+		return;
 	}
 
 	console.log(`Incoming request: ${req.url}, inProgress: ${inProgress}`);
