@@ -64,6 +64,7 @@
 		let now = new Date(1633358583454);
 		var shadeMap;
 		map.on('load', () => {
+			console.log('map.onload fired');
 			// add terrain layer
 			map.addSource('mapbox-dem', {
 				'type': 'raster-dem',
