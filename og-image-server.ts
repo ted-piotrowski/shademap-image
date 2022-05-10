@@ -151,6 +151,34 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 		listFiles(res);
 		return;
 	}
+	if (req.url.startsWith(process.env.URL + '/loc')) {
+		try {
+			if (!inProgress && page && req.url) {
+				// get lat, lng, date from body
+				inProgress = true;
+				const { lat, lng, zoom, date } = parseUrl(req.url);
+				const inShade = await page.evaluate(async ({ lat, lng, zoom, date }) => {
+					await (window as any).setLocation(lat, lng, zoom, date, 0, 0);
+					const point = (map as any).project({ lat, lng });
+					const [r, g, b, a] = (shadeMap as any).readPixel(point.x, point.y);
+					const inShade = a !== 0 ? 1 : 0; // if alpha is 0, no shade in this location
+					return inShade;
+				}, { lat, lng, zoom, date })
+				res.writeHead(200, {
+					'Content-Type': 'application/json',
+				})
+				res.end(JSON.stringify({ date, lat, lng, zoom, inShade }));
+			}
+		} catch (e) {
+			console.log(e)
+			res.writeHead(500, {
+				'Content-Type': 'application/json',
+			});
+			res.end();
+		} finally {
+			inProgress = false;
+		}
+	}
 
 	console.log(`Incoming request: ${req.url}, inProgress: ${inProgress}`);
 	try {
@@ -169,19 +197,8 @@ async function requestListener(req: IncomingMessage, res: ServerResponse) {
 
 			console.log(`${filename} does not exist, moving Shademap to new coordinates`)
 			await page.evaluate(async ({ lat, lng, zoom, date, bearing, pitch }) => {
-				(window as any).setLocation(lat, lng, zoom, date, bearing, pitch);
-				await new Promise((res, rej) => {
-					map.once('idle', res);
-				});
+				await (window as any).setLocation(lat, lng, zoom, date, bearing, pitch);
 			}, { lat, lng, zoom, date, bearing, pitch })
-
-			console.log(`Waiting for network idle`);
-			await page.waitForNetworkIdle();
-
-			console.log(`Flushing ShadeMap GPU`);
-			await page.evaluate(() => {
-				shadeMap.flushSync();
-			})
 
 			console.log(`Capturing screenshot`);
 			const screenshot = await page.screenshot() as Buffer;

@@ -106,7 +106,7 @@
 		});
 		/* End ShadeMap setup */
 
-		function setLocation(lat, lng, zoom, date, bearing, pitch) {
+		async function setLocation(lat, lng, zoom, date, bearing, pitch) {
 			if (pitch) {
 				map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
 				map.setLayoutProperty('building-layer', 'visibility', 'visible');
@@ -114,16 +114,24 @@
 				map.setTerrain();
 				map.setLayoutProperty('building-layer', 'visibility', 'none');
 			}
+			let idle = new Promise((res, rej) => {
+				shadeMap.on('idle', res);
+			});
 			map.jumpTo({
 				center: { lng, lat },
 				zoom,
 				bearing,
 				pitch
 			})
+			await idle;
 			shadeMap.setDate(new Date(date));
+			idle = new Promise((res, rej) => {
+				shadeMap.on('idle', res);
+			});
+			shadeMap.setDate(new Date(date));
+			await idle;
 			const improveThisMap = document.querySelector('.mapbox-improve-map');
 			improveThisMap && improveThisMap.remove();
-			shadeMap.flushSync();
 		}
 	</script>
 </body>
