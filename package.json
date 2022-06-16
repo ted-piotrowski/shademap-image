@@ -13,7 +13,10 @@
     "typescript": "^4.5.4"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "rimraf dist && tsc --build --verbose",
     "start": "ts-node og-image-server.ts"
+  },
+  "devDependencies": {
+    "rimraf": "^3.0.2"
   }
 }
